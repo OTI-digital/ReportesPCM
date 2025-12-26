@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRONIED - Reporte de Gestión PCM</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ============================================================
+           CONFIGURACIÓN DE VARIABLES Y TEMAS (ROOT)
+           ============================================================ */
+        :root {
+            --primary-red: #C51118; 
+            --dark-bg: #1A1A1B;
+            --sidebar-width: 280px;
+            --sidebar-mobile-width: 80px;
+            --gray-light: #F4F7F9;
+            --sharepoint-blue: #0078D4;
+            
+            /* Colores de Estados PCM */
+            --color-cumplido: #1E7E34;
+            --color-actualizar: #D39E00;
+            --color-pendiente: #BD2130;
+            --color-na: #00AEEF;
+            
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ============================================================
+           ESTILOS BASE
+           ============================================================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background-color: var(--gray-light); 
+            display: flex; 
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* ============================================================
+           SIDEBAR (NAVEGACIÓN)
+           ============================================================ */
+        .sidebar { 
+            width: var(--sidebar-width); 
+            background: var(--dark-bg); 
+            min-height: 100vh; 
+            position: fixed; 
+            left: 0; top: 0;
+            border-right: 6px solid var(--primary-red);
+            z-index: 1000;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 45px 20px;
+            background: var(--primary-red);
+            text-align: center;
+            clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h2 { 
+            color: white; 
+            font-family: 'Montserrat'; 
+            font-weight: 900; 
+            font-size: 22px; 
+            letter-spacing: 1.5px; 
+        }
+
+        .nav-menu { padding: 20px 12px; flex-grow: 1; }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: #C0C0C0;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-link i { margin-right: 15px; font-size: 22px; width: 35px; text-align: center; }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .nav-link.active { 
+            background: var(--primary-red); 
+            color: white; 
+            box-shadow: 0 8px 20px rgba(197, 17, 24, 0.3);
+        }
+
+        .nav-link.sharepoint-link {
+            border: 1px solid rgba(0, 120, 212, 0.5);
+            margin-top: 20px;
+            background: rgba(0, 120, 212, 0.05);
+        }
+
+        /* ============================================================
+           ÁREA PRINCIPAL
+           ============================================================ */
+        .main-wrapper { 
+            margin-left: var(--sidebar-width); 
+            width: calc(100% - var(--sidebar-width)); 
+            padding: 50px; 
+            transition: var(--transition-smooth);
+        }
+
+        .header-web {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #E2E8F0;
+            padding-bottom: 25px;
+        }
+
+        .header-web h1 { 
+            font-family: 'Montserrat'; 
+            font-weight: 900; 
+            font-size: 32px; 
+            color: var(--dark-bg); 
+        }
+
+        .btn-pdf {
+            background: var(--dark-bg);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            font-size: 12px;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-pdf:hover { background: #333; transform: translateY(-2px); }
+
+        /* KPI DASHBOARD */
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            border-top: 6px solid #DDD;
+        }
+
+        .metric-card h4 { font-size: 38px; font-family: 'Montserrat'; font-weight: 900; }
+        .metric-card p { font-size: 11px; font-weight: 800; color: #777; text-transform: uppercase; margin-top: 8px; }
+        
+        .m-cumplido { border-top-color: var(--color-cumplido); color: var(--color-cumplido); }
+        .m-actualizar { border-top-color: var(--color-actualizar); color: var(--color-actualizar); }
+        .m-pendiente { border-top-color: var(--color-pendiente); color: var(--color-pendiente); }
+        .m-na { border-top-color: var(--color-na); color: var(--color-na); }
+
+        /* TABLA */
+        .table-box { 
+            background: white; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: var(--shadow-lg); 
+            border: 1px solid #E2E8F0; 
+        }
+
+        .table-scroll { width: 100%; overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+
+        thead th { 
+            background: var(--dark-bg); 
+            color: white; 
+            padding: 22px 20px; 
+            text-align: left; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            border-bottom: 5px solid var(--primary-red); 
+        }
+
+        tbody td { 
+            padding: 22px 20px; 
+            border-bottom: 1px solid #F1F5F9; 
+            vertical-align: top; 
+            font-size: 13px; 
+        }
+
+        .col-num { width: 70px; text-align: center; font-weight: 900; color: var(--primary-red); font-size: 16px; }
+
+        .badge {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            display: inline-block;
+            min-width: 120px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .status-cumplido { background: #E6F4EA; color: var(--color-cumplido); border: 1px solid var(--color-cumplido); }
+        .status-actualizar { background: #FFF9E6; color: var(--color-actualizar); border: 1px solid var(--color-actualizar); }
+        .status-pendiente { background: #FDF2F2; color: var(--color-pendiente); border: 1px solid var(--color-pendiente); }
+        .status-na { background: #E1F5FE; color: var(--color-na); border: 1px solid var(--color-na); }
+
+        /* ============================================================
+           ESTILOS PARA PDF (QUITA LOCALHOST Y MEJORA SEMÁFORO)
+           ============================================================ */
+        #header-pdf, #footer-pdf { display: none; }
+
+        @media print {
+            /* ESTE BLOQUE ELIMINA EL "LOCALHOST" Y LAS CABECERAS DEL NAVEGADOR */
+            @page { 
+                size: portrait; 
+                margin: 0mm; /* Elimina márgenes de página para ocultar cabeceras automáticas */
+            }
+            
+            body { 
+                background: white; 
+                padding: 15mm; /* Añade el margen interno manualmente */
+            }
+
+            .sidebar, .header-web, .metrics-container, .btn-pdf { display: none !important; }
+            .main-wrapper { margin: 0; width: 100%; padding: 0 !important; }
+
+            /* Header PDF */
+            #header-pdf { 
+                display: block; 
+                margin-bottom: 30px;
+                border-bottom: 3px solid var(--primary-red);
+                padding-bottom: 15px;
+            }
+
+            .pdf-logo-area {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .pdf-logo-text {
+                font-family: 'Montserrat';
+                font-weight: 900;
+                font-size: 22px;
+                color: var(--primary-red);
+            }
+
+            .pdf-info-text {
+                text-align: right;
+                font-size: 9px;
+                color: #555;
+                line-height: 1.4;
+            }
+
+            #header-pdf h1 { 
+                font-size: 16px; 
+                color: #1A1A1B; 
+                text-align: center;
+                text-transform: uppercase;
+                margin-top: 15px;
+                font-weight: 800;
+            }
+
+            /* Tabla Semaforizada */
+            table { min-width: 100%; border: 1px solid #DDD; }
+            thead th { 
+                background: #F8FAFC !important; 
+                color: #000 !important; 
+                border-bottom: 2px solid #000; 
+                font-size: 9px;
+            }
+            
+            tbody td { 
+                font-size: 10px; 
+                padding: 10px; 
+                border-bottom: 1px solid #EEE;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Colores de Semáforo en PDF */
+            .row-cumplido { border-left: 8px solid var(--color-cumplido) !important; }
+            .row-actualizar { border-left: 8px solid var(--color-actualizar) !important; }
+            .row-pendiente { border-left: 8px solid var(--color-pendiente) !important; }
+            .row-na { border-left: 8px solid var(--color-na) !important; }
+
+            .badge {
+                border: 1px solid #DDD !important;
+                background: transparent !important;
+                color: #000 !important;
+                font-weight: bold;
+            }
+
+            /* Footer Fecha */
+            #footer-pdf {
+                display: block;
+                position: fixed;
+                bottom: 10mm;
+                left: 0;
+                right: 0;
+            }
+
+            .footer-date-print {
+                display: block !important;
+                text-align: center;
+                font-size: 9px;
+                color: #777;
+                border-top: 1px solid #EEE;
+                padding-top: 10px;
+                font-weight: bold;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar { width: var(--sidebar-mobile-width); }
+            .sidebar-header h2, .nav-link span { display: none; }
+            .main-wrapper { margin-left: var(--sidebar-mobile-width); width: calc(100% - var(--sidebar-mobile-width)); padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>PRONIED</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-link active">
+                <i class="fas fa-clipboard-check"></i> 
+                <span>COMPROMISOS PCM</span>
+            </a>
+            <a href="https://proniedoti.sharepoint.com/:f:/s/OTI/IgABZUkLjJ-FRbi6gUzL5Z52ARDu8W45d1vBpdVzblWI2bg?e=xO4GXn" 
+               target="_blank" 
+               class="nav-link sharepoint-link">
+                <i class="fas fa-folder-open"></i> 
+                <span>RECURSOS OTI</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-wrapper">
+        <div id="header-pdf">
+            <div class="pdf-logo-area">
+                <div class="pdf-logo-text">PRONIED</div>
+                <div class="pdf-info-text">
+                    Ministerio de Educación<br>
+                    Oficina de Tecnologías de la Información
+                </div>
+            </div>
+            <h1>Reporte de Seguimiento: Compromisos de Gobierno Digital</h1>
+        </div>
+
+        <header class="header-web">
+            <h1>Gestión de Compromisos</h1>
+            <button class="btn-pdf" onclick="window.print()">
+                <i class="fas fa-file-pdf"></i> Generar Reporte PDF Limpio
+            </button>
+        </header>
+
+        <section class="metrics-container">
+            <div class="metric-card m-cumplido"><h4>12</h4><p>Cumplidos</p></div>
+            <div class="metric-card m-actualizar"><h4>2</h4><p>Por Actualizar</p></div>
+            <div class="metric-card m-pendiente"><h4>5</h4><p>Pendientes</p></div>
+            <div class="metric-card m-na"><h4>1</h4><p>No Aplica</p></div>
+            <div class="metric-card" style="background:#1A1A1B; color:white;"><h4>20</h4><p>Total</p></div>
+        </section>
+
+        <div class="table-box">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-num">N°</th>
+                            <th style="width: 30%;">Compromiso Técnico / Base Normativa</th>
+                            <th style="width: 25%;">Evidencia / Consideración</th>
+                            <th style="width: 135px; text-align: center;">Estado PCM</th>
+                            <th>Observaciones de Gestión</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="footer-pdf">
+            <div class="footer-date-print" id="datePrint"></div>
+        </div>
+    </main>
+
+    <script>
+        const DATA = [
+            { n: 1, t: "Incorporar en su Plan Estratégico Institucional el objetivo estratégico de Transformación Digital.", c: "Remitido a Especialista Antonio Vigo (SEGDI) para validación final.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Incorporado y validado en el PEI vigente." },
+            { n: 2, t: "Designar al Líder de Gobierno Digital (DS N°033-2018-PCM).", c: "Pendiente registro en Portal FACILITA ante nueva designación.", s: "POR ACTUALIZAR", st: "status-actualizar", r: "row-actualizar", o: "En evaluación ante la Alta Dirección." },
+            { n: 3, t: "Constituir el Comité de Gobierno y Transformación Digital.", c: "Actualizar ante cambios de autoridades en el Portal FACILITA.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Comité constituido con sesiones activas." },
+            { n: 4, t: "Elaborar y aprobar su Plan de Gobierno Digital alineado al PEI y POI.", c: "Actualización anual obligatoria según normativa SEGDI.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Plan formulado satisfactoriamente." },
+            { n: 5, t: "Incorporar su página web a la Plataforma GOB.PE.", c: "Integración de aplicaciones y servicios ciudadanos.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Integración plena en GOB.PE." },
+            { n: 6, t: "Desplegar el Modelo de Gestión Documental (MGD).", c: "Sistema operativo bajo estándares nacionales.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Módulo de gestión documental activo." },
+            { n: 7, t: "Implementar el equipo de respuestas ante incidentes (CSIRT).", c: "Uso de CSIRT VIRTUAL de la Secretaría de Gobierno Digital.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Equipo CSIRT reportado y activo." },
+            { n: 8, t: "Publicar Datos Abiertos en la Plataforma Nacional.", c: "Incluir nuevos data sets de Unidades Funcionales.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Publicación de datos completada." },
+            { n: 9, t: "Incorporar la información territorial a la Plataforma Georreferenciada.", c: "Información requerida para integración con IDEP.", s: "PENDIENTE", st: "status-pendiente", r: "row-pendiente", o: "Etapa de recolección de data técnica." },
+            { n: 10, t: "Lanzar la estrategia digital con servidores y medios externos.", c: "Programación de talleres de sensibilización interna.", s: "PENDIENTE", st: "status-pendiente", r: "row-pendiente", o: "En proceso de gestión presupuestal." },
+            { n: 11, t: "Designación del Oficial de Seguridad y Confianza Digital.", c: "Registro pendiente en FACILITA.", s: "POR ACTUALIZAR", st: "status-actualizar", r: "row-actualizar", o: "Perfil en evaluación por URH." },
+            { n: 12, t: "Implementación del Sistema de Gestión de Seguridad (SGSI).", c: "Ejecución de controles según norma ISO 27001.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Plan SGSI aprobado y en ejecución." },
+            { n: 13, t: "Designación del Responsable de Software Público.", c: "Registro de aplicaciones ante la SEGDI.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Designación vigente y notificada." },
+            { n: 14, t: "Formulación del Plan de Transición al Protocolo IPV6.", c: "Coordinación técnica con el área de infraestructura.", s: "PENDIENTE", st: "status-pendiente", r: "row-pendiente", o: "Plan en proceso de validación técnica." },
+            { n: 15, t: "Disponer de una mesa de partes digital.", c: "Canal de recepción documental 24/7.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Mesa de partes virtual operativa." },
+            { n: 16, t: "Publicar la información del TUPA en GOB.PE.", c: "Dependencia jerárquica del MINEDU.", s: "NO APLICA", st: "status-na", r: "row-na", o: "Según estructura del Sector Educación." },
+            { n: 17, t: "Cumplir con la Encuesta Nacional de Activos Digitales (ENRIAP).", c: "Reporte anual de inventario tecnológico.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Reporte de activos enviado exitosamente." },
+            { n: 18, t: "Publicar y consumir servicios de la PIDE.", c: "Interoperabilidad con servicios transversales.", s: "CUMPLIDO", st: "status-cumplido", r: "row-cumplido", o: "Servicios PIDE activos." },
+            { n: 19, t: "Implementar el Portal de Transparencia Estándar.", c: "Verificación trimestral ante la PCM.", s: "PENDIENTE", st: "status-pendiente", r: "row-pendiente", o: "Actualización de datos presupuestales." },
+            { n: 20, t: "Designar al Oficial de Gobierno de Datos.", c: "Reporte pendiente de regularización ante PCM.", s: "PENDIENTE", st: "status-pendiente", r: "row-pendiente", o: "Trámite de notificación oficial iniciado." }
+        ];
+
+        function initializeDashboard() {
+            const tableBody = document.getElementById('dataTable');
+            let htmlRows = "";
+            
+            DATA.forEach(item => {
+                htmlRows += `
+                    <tr class="${item.r}">
+                        <td class="col-num">${item.n}</td>
+                        <td style="font-weight:700; color:#111;">${item.t}</td>
+                        <td style="font-size:11px; color:#555; font-style:italic;">${item.c}</td>
+                        <td style="text-align:center;">
+                            <span class="badge ${item.st}">${item.s}</span>
+                        </td>
+                        <td style="color:#444;">${item.o}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = htmlRows;
+            
+            const today = new Date();
+            const dateOptions = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('datePrint').innerText = "REPORTE DE CONTROL DE GOBIERNO DIGITAL - GENERADO EL: " + today.toLocaleDateString('es-PE', dateOptions).toUpperCase();
+        }
+
+        window.onload = initializeDashboard;
+    </script>
+</body>
+</html>
